@@ -13,38 +13,42 @@ get_simulated_data <- function () {
   return(data)
 }
 
-# Grab pfpr time series from BoX
+# Read PfPR time series from BigQuery
 get_pfpr <- function(loc) {
-  box_dir <- "/Users/aucarter/Library/CloudStorage/Box-Box/RAMP"
-  pfpr_path <- file.path(box_dir, "Clean Data/pfpr_tpr_work/district_level_pfpr_time_series.csv")
-  dt <- fread(pfpr_path)[district_name == loc]
-  dt[, date := as.Date(paste(year, month, 1, sep = "-"))]
-  data <- torch_tensor(cbind(
-    x = 1:nrow(dt) * 3,
-    y = dt[order(date)]$pfpr_pred
-  ))
-  return(data)
+  # TODO: migrate pfpr data to BigQuery
+  message("get_pfpr: PfPR data not yet available in BigQuery")
+  stop("PfPR data migration pending")
 }
 
+#' Get malaria case data for a district from BigQuery
+#'
+#' @param loc District name
+#' @return torch tensor with x (time index) and y (cases / population)
 get_cases <- function(loc) {
-  box_dir <- "/Users/aucarter/Library/CloudStorage/Box-Box/RAMP"
-  cases_path <- file.path(box_dir, "data/dhis/monthly/clean/prod/clean_data.csv")
-  pop_path <- file.path(box_dir, "External Data/dist_pop.csv")
-  dt <- fread(cases_path)[location_name == loc & code_name == "conf_malaria"][order(period)]
+  library(ramptools)
+  dt <- bq_get_clean_data(
+    frequency = "monthly",
+    code_names = "conf_malaria",
+    levels = 3L
+  )
+  dt <- dt[location_name == loc][order(period)]
   dt[, year := as.integer(substr(period, 1, 4))]
   dt <- dt[year > 2015]
-  pop <- fread(pop_path)[admin3 == loc]$population
+  pop <- district_pop[district_pop$admin3 == loc, ]$population
   data <- torch_tensor(cbind(
     x = 1:nrow(dt) * 3,
-    y = dt$imputed_value / pop / (0.4) # Proportion seeking care in a public facility
+    y = dt$imputed_value / pop / (0.4)
   ))
   return(data)
 }
 
+#' Get population for a district
+#'
+#' @param loc District name
+#' @return Population count
 get_pop <- function(loc) {
-  box_dir <- "/Users/aucarter/Library/CloudStorage/Box-Box/RAMP"
-  pop_path <- file.path(box_dir, "External Data/dist_pop.csv")
-  pop <- fread(pop_path)[admin3 == loc]$population
+  library(ramptools)
+  pop <- district_pop[district_pop$admin3 == loc, ]$population
   return(pop)
 }
 

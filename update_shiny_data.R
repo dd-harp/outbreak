@@ -1,19 +1,21 @@
-library(ggplot2); library(ggforce); library(ggpubr); library(ggrepel); library(lubridate);
-library(sf); library(scales)
-source("gen_smooths.R")
+####
+# Update Shiny App Data from BigQuery
+#
+# Reads clean monthly data from BigQuery, computes outbreak indices,
+# joins with shapefiles, and saves the RDS for the Shiny app.
+####
+
+library(ggplot2); library(lubridate)
+library(sf); library(scales); library(data.table)
+source("R/gen_smooths.R")
 library(ramptools)
 
 # Arguments
-read_cached_data <- F
 district_bandwidths <- c(60, 100, 365, 0) # Zero means median
-region_bandwidths <-  c(60, 100, 365, 0) 
 
-# Paths
-box_dir <- "/Users/aucarter/Library/CloudStorage/Box-Box/RAMP"
-case_path <- file.path(box_dir, "data/dhis/monthly/clean/prod/clean_data.csv")
+# Read from BigQuery
+input_dt <- bq_get_clean_data(frequency = "monthly")
 
-# Prep case data
-input_dt <- fread(case_path)
 district_dt <- input_dt[level == 3 & code_name %in% c("conf_malaria", "ip_conf_cases")]
 district_dt[, period := as.character(period)]
 district_dt <- merge(district_dt, make_month_map())
@@ -44,39 +46,22 @@ district_smooth_dt <- merge(district_smooth_dt,
                             by = c("location_name", "code_name", "month"))
 district_smooth_dt[bandwidth == "b_0", smooth := smooth * rel_seasonality]
 
-# Calculate relative values
+# Calculate outbreak index
 dt <- dcast(district_smooth_dt, location_name + code_name + date + value ~ bandwidth, value.var = "smooth")
-dt[, year_to_average := b_365 / b_0]
-dt[, monthly_to_year := b_100 / b_365]
-dt[, residual := value - b_100]
 dt[, excess_rel_baseline := b_60 / b_0]
 
-
+# Create combined indicator (average across code_names)
 avg_dt <- dt[, .(excess_rel_baseline = mean(excess_rel_baseline)), by = .(date, location_name)]
 avg_dt[, code_name := "combined"]
-dt <- rbind(dt, avg_dt, fill = T)
+dt <- rbind(dt, avg_dt, fill = TRUE)
 
 dt[, Year := year(date)]
-dt[, Month := lubridate::month(date, label = T)]
+dt[, Month := lubridate::month(date, label = TRUE)]
 setnames(dt, "location_name", "name")
 
-  
-subset_dt <- dt[Year >= 2017, c("date", "code_name", "name", "excess_rel_baseline", "Year", "Month"), with = F]
+subset_dt <- dt[Year >= 2017, c("date", "code_name", "name", "excess_rel_baseline", "Year", "Month"), with = FALSE]
 setnames(subset_dt, "excess_rel_baseline", "value")
 dist_shp2 <- merge(uga_district_shp, subset_dt, by = "name")
-c <- "conf_malaria"
 
-gg <- ggplot(data = dist_shp2[dist_shp2$code_name == c,]) + 
-  geom_sf(aes(fill = value), lwd = 0) + 
-  theme_void()  + 
-  scale_fill_gradientn(
-    colors = c("forestgreen", "yellowgreen", "yellow", "red", "darkred"), 
-    values = rescale(log(c(0.1, 1, 1.5, 2, 5))), 
-    guide = "colorbar", limits=c(0.1, 5), 
-    trans = "log", breaks = c(0.1, 0.5, 1, 2, 5)) + 
-  facet_grid(Year~Month) +
-  theme(legend.position = "bottom") +
-  labs(fill = "Outbreak Index")
-gg
-
-saveRDS(dist_shp2, "shiny_apps/outbreak_detection2/data2.rds")
+saveRDS(dist_shp2, "outbreak_detection2/data2.rds")
+message("Shiny data updated: outbreak_detection2/data2.rds")

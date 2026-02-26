@@ -1,6 +1,7 @@
 ## Read in data and calculate outbreak two ways
 library(data.table)
 source("R/get_district_dt.R")
+source("R/gen_smooths.R")
 source("R/get_outbreak_index.R")
 source("R/get_who_outbreak.R")
 # Read district data
