@@ -7,6 +7,8 @@ library(leaflet)
 library(DT)
 library(htmltools)
 library(data.table)
+library(bigrquery)
+library(ramptools)
 
 sf_use_s2(FALSE)
 
@@ -16,8 +18,13 @@ indicator_map <- list(
   "Combined" = "combined"
 )
 
-# -- Data loading (all data bundled in data.rds) ------------------------------
-shiny_data <- readRDS("data.rds")
+# -- Data loading -------------------------------------------------------------
+# Pulls clean monthly + weekly data from BigQuery and computes outbreak
+# indices at startup; falls back to bundled data.rds if BigQuery is
+# unreachable. shinyapps.io restarts the container after idle timeout, so
+# each restart picks up the latest data.
+source("load_data.R")
+shiny_data <- load_shiny_data("data.rds")
 
 map_dt <- shiny_data$map_dt
 map_dt[, date := as.Date(date)]

@@ -90,5 +90,6 @@ All case data comes from BigQuery dataset `uga_facility_data` in project `uganda
 | `R/get_who_outbreak.R` | WHO 75th percentile threshold method |
 | `calculate_outbreaks.R` | Iterative outbreak assessment, saves CSV |
 | `district_outbreak.R` | District-level outbreak maps |
-| `update_shiny_data.R` | Pre-compute and save RDS for Shiny app |
+| `update_shiny_data.R` | Pre-compute and save RDS (used as fallback for the Shiny app) |
 | `outbreak_detection/app.R` | Shiny dashboard (interactive map + time series) |
+| `outbreak_detection/load_data.R` | Loads + computes outbreak data from BigQuery at app startup, falls back to `data.rds` |

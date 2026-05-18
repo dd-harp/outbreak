@@ -5,5 +5,5 @@ account: aucarter
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 9131962
-bundleId: 11685059
+bundleId: 12008112
 url: https://aucarter.shinyapps.io/outbreak_detection/
