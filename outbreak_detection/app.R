@@ -214,14 +214,16 @@ server <- function(input, output, session) {
 
   output$table <- DT::renderDT({
     date_val <- snap_date(input$date_val)
-    threshold <- input$threshold_val
+    # Not named threshold: outbreak_data has a threshold column (the
+    # baseline in case counts), which would shadow it inside sub[, ...].
+    thr_val <- input$threshold_val
     sub <- map_data()[date == date_val]
     if (nrow(sub) == 0) return(NULL)
 
     tbl <- sub[, .(
       District = gsub(" District$", "", name),
       Value = round(value, 2),
-      Status = severity_label(value, threshold)
+      Status = severity_label(value, thr_val)
     )]
     tbl <- tbl[order(-Value)]
 
@@ -254,7 +256,7 @@ server <- function(input, output, session) {
       ) %>%
       DT::formatStyle(
         "Value",
-        background = DT::styleColorBar(c(0, 2 * threshold), "#FFE0E0"),
+        background = DT::styleColorBar(c(0, 2 * thr_val), "#FFE0E0"),
         backgroundSize = "98% 80%",
         backgroundRepeat = "no-repeat",
         backgroundPosition = "center"
