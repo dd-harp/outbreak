@@ -1,2 +1,4 @@
-box_dir: '/Users/aucarter/Library/CloudStorage/Box-Box/RAMP'
-code_dir: '/Users/aucarter/projects'
+# Copy from my_paths_template.yaml and fill in your local paths
+# This file is gitignored — do not commit real paths
+box_dir: '/Users/{username}/Library/CloudStorage/Box-Box/RAMP'
+code_dir: '/Users/{username}/projects'

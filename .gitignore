@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+my_paths.yaml
+plots/*.pdf
+# Service account keys (bundled at deploy time, never committed)
+**/sa-key.json

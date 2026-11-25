@@ -1,16 +1,10 @@
 library(yaml);library(data.table); library(ramptools); library(ggplot2)
 library(scales); library(sf)
+source("R/gen_smooths.R")
+source("R/get_outbreak_index.R")
 
-## Orient to local machine ----
-paths <- read_yaml("my_paths.yaml")
-
-clean_data_root <- file.path(
-  paths[["box_dir"]], "data", "dhis", "monthly", "clean", "prod"
-)
-clean_data_path <- file.path(clean_data_root, "clean_data.csv")
-
-# Read in monthly confirmed case data
-dt <- fread(clean_data_path)
+# Read clean monthly data from BigQuery
+dt <- bq_get_clean_data(frequency = "monthly")
 dt$period <- as.character(dt$period)
 dt <- merge(dt, make_month_map(), by = "period")
 

@@ -26,7 +26,7 @@ get_outbreak_index <- function(dt, bandwidths = c(60, 100, 365, 0)) {
   cast_district_dt[, year_to_average := b_365 / b_0]
   cast_district_dt[, monthly_to_year := b_100 / b_365]
   cast_district_dt[, residual := value - b_100]
-  # cast_district_dt[, excess_rel_baseline := b_60 / b_0]
+  cast_district_dt[, excess_rel_baseline := b_60 / b_0]
   
   return(cast_district_dt)
 }

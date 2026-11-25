@@ -1,27 +1,26 @@
- 
+#' Get district-level monthly data for outbreak detection
+#'
+#' Reads clean monthly data from BigQuery, subsets to district level,
+#' and prepares it for smoothing and outbreak detection.
+#'
+#' @return data.table with district-level malaria data
 get_district_dt <- function() {
-  library(ggplot2); library(ggforce); library(ggpubr); library(ggrepel); library(lubridate);
-  library(sf); library(scales)
-  source("gen_smooths.R")
+  library(data.table)
+  library(lubridate)
   library(ramptools)
-  
-  # Arguments
-  read_cached_data <- F
-  district_bandwidths <- c(60, 100, 365, 0) # Zero means median
-  region_bandwidths <-  c(60, 100, 365, 0) 
-  
-  # Paths
-  box_dir <- "/Users/aucarter/Library/CloudStorage/Box-Box/RAMP"
-  case_path <- file.path(box_dir, "data/dhis/monthly/clean/prod/clean_data.csv")
-  
-  # Prep case data
-  input_dt <- fread(case_path)
-  district_dt <- input_dt[level == 3 & code_name %in% c("conf_malaria", "ip_conf_cases")]
+  source("R/gen_smooths.R")
+
+  # Read from BigQuery
+  district_dt <- bq_get_clean_data(
+    frequency = "monthly",
+    code_names = c("conf_malaria", "ip_conf_cases"),
+    levels = 3L
+  )
   district_dt[, period := as.character(period)]
   district_dt <- merge(district_dt, make_month_map())
   district_dt[, date := date_mid]
   setnames(district_dt, "value", "raw_value")
   setnames(district_dt, "imputed_value", "value")
-  
+
   return(district_dt)
 }
